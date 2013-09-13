@@ -222,8 +222,11 @@ ol.layer.FeatureCache.prototype.getFeatureWithUid = function(uid) {
 /**
  * Remove a feature from the cache.
  * @param {ol.Feature} feature Feature.
+ * @return {ol.Extent} The cached extent of the removed feature geometry, or
+ *     null if the feature has no geometry.
  */
 ol.layer.FeatureCache.prototype.remove = function(feature) {
+  var bounds = null;
   var id = goog.getUid(feature).toString(),
       geometry = feature.getGeometry();
 
@@ -233,8 +236,17 @@ ol.layer.FeatureCache.prototype.remove = function(feature) {
   if (!goog.isNull(geometry)) {
     var geometryType = geometry.getType();
     delete this.geometryTypeIndex_[geometryType][id];
-    this.rTree_.remove(geometry.getBounds(), feature);
+    // TODO: No bounds should be needed when removing known objects from the
+    // RTree - consider switching to @mourner's RBush
+    var result = this.rTree_.remove(geometry.getBounds(), feature);
+    if (result.length == 0) {
+      // bounds have changed, try again with infinite bounds
+      result = this.rTree_.remove([-Infinity, Infinity, -Infinity, Infinity],
+          feature);
+    }
+    bounds = result[0].extent;
   }
+  return bounds;
 };
 
 
@@ -252,6 +264,7 @@ ol.layer.VectorLayerEventType = {
 /**
  * @typedef {{extent: (ol.Extent|undefined),
  *            features: (Array.<ol.Feature>|undefined),
+ *            target: ol.layer.Vector,
  *            type: ol.layer.VectorLayerEventType}}
  */
 ol.layer.VectorLayerEventObject;
@@ -312,7 +325,16 @@ ol.layer.Vector = function(options) {
    * @type {boolean}
    * @private
    */
-  this.temp_ = false;
+  this.temporary_ = false;
+
+  /**
+   * @private
+   * @type {{rTree: ol.structs.RTree, vertexFeature: ol.Feature}}
+   */
+  this.editData_ = {
+    rTree: null,
+    vertexFeature: null
+  };
 
 };
 goog.inherits(ol.layer.Vector, ol.layer.Layer);
@@ -355,7 +377,15 @@ ol.layer.Vector.prototype.clear = function() {
  * @return {boolean} Whether this layer is temporary.
  */
 ol.layer.Vector.prototype.getTemporary = function() {
-  return this.temp_;
+  return this.temporary_;
+};
+
+
+/**
+ * @return {{rTree: ol.structs.RTree}} Edit data.
+ */
+ol.layer.Vector.prototype.getEditData = function() {
+  return this.editData_;
 };
 
 
@@ -614,10 +644,38 @@ ol.layer.Vector.prototype.setRenderIntent =
 
 
 /**
- * @param {boolean} temp Whether this layer is temporary.
+ * @param {boolean} temporary Whether this layer is temporary.
  */
-ol.layer.Vector.prototype.setTemporary = function(temp) {
-  this.temp_ = temp;
+ol.layer.Vector.prototype.setTemporary = function(temporary) {
+  this.temporary_ = temporary;
+};
+
+
+/**
+ * TODO: This should go away - features should either fire events when changed,
+ * or feature changes should be made through the layer.
+ *
+ * @param {Array.<ol.Feature>} features Features.
+ */
+ol.layer.Vector.prototype.updateFeatures = function(features) {
+  var extent = ol.extent.createEmpty();
+  for (var i = features.length - 1; i >= 0; --i) {
+    var feature = features[i];
+    var geometry = feature.getGeometry();
+    var oldBounds = this.featureCache_.remove(feature);
+    // TODO: oldBounds wouldn't be needed if geometry modifications would be
+    // done through the layer instead of directly or on the feature.
+    if (!goog.isNull(oldBounds)) {
+      ol.extent.extend(extent, oldBounds);
+    }
+    this.featureCache_.add(feature);
+    ol.extent.extend(extent, geometry.getBounds());
+  }
+  this.dispatchEvent(/** @type {ol.layer.VectorLayerEventObject} */ ({
+    extent: extent,
+    features: features,
+    type: ol.layer.VectorLayerEventType.CHANGE
+  }));
 };
 
 
