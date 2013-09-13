@@ -155,3 +155,21 @@ ol.geom.SharedVertices.prototype.getStart = function(id) {
 ol.geom.SharedVertices.prototype.getStarts = function() {
   return this.starts_;
 };
+
+
+/**
+ * @param {number} id The vertex array identifier (returned by add).
+ * @param {number} index The vertex index.
+ * @param {number} dim The coordinate dimension.
+ * @param {number} value The coordinate value.
+ */
+ol.geom.SharedVertices.prototype.set = function(id, index, dim, value) {
+  goog.asserts.assert(id < this.starts_.length);
+  goog.asserts.assert(dim <= this.dimension_);
+  goog.asserts.assert(index < this.counts_[id]);
+  var start = this.starts_[id];
+  if (this.offset_) {
+    value -= this.offset_[dim];
+  }
+  this.coordinates[start + (index * this.dimension_) + dim] = value;
+};

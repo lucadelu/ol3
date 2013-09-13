@@ -110,3 +110,16 @@ ol.geom.Point.prototype.getSharedId = function() {
 ol.geom.Point.prototype.invalidateBounds = function() {
   this.bounds_ = null;
 };
+
+
+/**
+ * @param {number} dim Coordinate dimension.
+ * @param {number} value The coordinate value.
+ */
+ol.geom.Point.prototype.set = function(dim, value) {
+  if (!goog.isNull(this.bounds_) && dim <= 1) {
+    this.bounds_[dim * 2] = value;
+    this.bounds_[dim * 2 + 1] = value;
+  }
+  this.vertices.set(this.sharedId_, 0, dim, value);
+};

@@ -172,3 +172,14 @@ ol.geom.LineString.prototype.distanceFromCoordinate = function(coordinate) {
 ol.geom.LineString.prototype.invalidateBounds = function() {
   this.bounds_ = null;
 };
+
+
+/**
+ * @param {number} index Vertex index.
+ * @param {number} dim Coordinate dimension.
+ * @param {number} value The coordinate value.
+ */
+ol.geom.LineString.prototype.set = function(index, dim, value) {
+  this.invalidateBounds();
+  this.vertices.set(this.sharedId_, index, dim, value);
+};
