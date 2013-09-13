@@ -179,3 +179,11 @@ ol.geom.Polygon.prototype.getInteriorPoint = function() {
 
   return this.labelPoint_;
 };
+
+
+/**
+ * @inheritDoc
+ */
+ol.geom.Polygon.prototype.invalidateBounds = function() {
+  this.rings[0].invalidateBounds();
+};

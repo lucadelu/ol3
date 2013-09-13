@@ -164,3 +164,11 @@ ol.geom.LineString.prototype.distanceFromCoordinate = function(coordinate) {
   }
   return Math.sqrt(dist2);
 };
+
+
+/**
+ * @inheritDoc
+ */
+ol.geom.LineString.prototype.invalidateBounds = function() {
+  this.bounds_ = null;
+};

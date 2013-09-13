@@ -67,3 +67,11 @@ ol.geom.AbstractCollection.prototype.getCoordinates = function() {
  * @inheritDoc
  */
 ol.geom.AbstractCollection.prototype.getType = goog.abstractMethod;
+
+
+/**
+ * @inheritDoc
+ */
+ol.geom.AbstractCollection.prototype.invalidateBounds = function() {
+  this.bounds = null;
+};

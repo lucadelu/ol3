@@ -102,3 +102,11 @@ ol.geom.Point.prototype.getType = function() {
 ol.geom.Point.prototype.getSharedId = function() {
   return this.sharedId_;
 };
+
+
+/**
+ * @inheritDoc
+ */
+ol.geom.Point.prototype.invalidateBounds = function() {
+  this.bounds_ = null;
+};
