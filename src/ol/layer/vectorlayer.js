@@ -241,7 +241,7 @@ ol.layer.FeatureCache.prototype.remove = function(feature) {
     var result = this.rTree_.remove(geometry.getBounds(), feature);
     if (result.length == 0) {
       // bounds have changed, try again with infinite bounds
-      result = this.rTree_.remove([-Infinity, Infinity, -Infinity, Infinity],
+      result = this.rTree_.remove([-Infinity, -Infinity, Infinity, Infinity],
           feature);
     }
     bounds = result[0].extent;
